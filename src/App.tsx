@@ -60,7 +60,7 @@ function generatePuzzle(full: string[][], level: number): string[][] {
   return puzzle;
 }
 
-  const App: React.FC = () => {
+const App: React.FC = () => {
   // Desmarca seleção ao clicar fora do grid
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -71,11 +71,12 @@ function generatePuzzle(full: string[][], level: number): string[][] {
         // Ignora se for botão
         if ((e.target as HTMLElement).closest('button')) return;
         setSelectedCells([]);
+        setHighlightNum(null);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);}
+  }, []);
 
   const [grid, setGrid] = useState(emptyGrid);
   // Novo estado: matriz booleana indicando se a célula está preenchida
@@ -88,7 +89,6 @@ function generatePuzzle(full: string[][], level: number): string[][] {
   const [isSelecting, setIsSelecting] = useState(false);
   // Estado para saber se o arrasto começou em célula selecionada
   const [dragStartedOnSelectedCell, setDragStartedOnSelectedCell] = useState(false);
-  const [difficulty, setDifficulty] = useState(1);
   const [noteMode, setNoteMode] = useState(false);
   const [highlightNum, setHighlightNum] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -101,7 +101,6 @@ function generatePuzzle(full: string[][], level: number): string[][] {
     setGrid(puzzle);
     setNotes(emptyNotes);
     setSelectedCells([]);
-    setDifficulty(level);
     setShowWelcome(false);
     setHistory([]);
   };
@@ -121,8 +120,11 @@ function generatePuzzle(full: string[][], level: number): string[][] {
       });
     } else {
       // Se preenchida, só destaca o número
+      
       const value = grid[row][col];
       setHighlightNum(value);
+    }
+
   };
 
   const handleCellMouseDown = (row: number, col: number, e: React.MouseEvent) => {
