@@ -63,7 +63,7 @@ function generatePuzzle(full: string[][], level: number): string[][] {
 const App: React.FC = () => {
   // Desmarca seleção ao clicar fora do grid
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
       // Só desmarca se o clique não for dentro do grid nem em botões
       const grid = document.querySelector('.grid');
       if (!grid) return;
@@ -74,8 +74,25 @@ const App: React.FC = () => {
         setHighlightNum(null);
       }
     }
+    
+    // Previne comportamentos padrão de touch
+    function preventDefaultTouch(e: TouchEvent) {
+      if (e.target && (e.target as HTMLElement).closest('.sudoku-app')) {
+        e.preventDefault();
+      }
+    }
+    
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
+    document.addEventListener('touchstart', preventDefaultTouch, { passive: false });
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('touchmove', preventDefaultTouch);
+      document.removeEventListener('touchstart', preventDefaultTouch);
+    };
   }, []);
 
   const [grid, setGrid] = useState(emptyGrid);
@@ -90,95 +107,130 @@ const App: React.FC = () => {
   // Estado para saber se o arrasto começou em célula selecionada
   const [dragStartedOnSelectedCell, setDragStartedOnSelectedCell] = useState(false);
   const [noteMode, setNoteMode] = useState(false);
+  const [colorMode, setColorMode] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<number>(1);
+  const [cellColors, setCellColors] = useState<number[][][]>(
+    Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => []))
+  );
   const [highlightNum, setHighlightNum] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const [pickerValue, setPickerValue] = useState(1);
-  const [history, setHistory] = useState<{grid: string[][], notes: NoteType[][]}[]>([]);
+  const [history, setHistory] = useState<{grid: string[][], notes: NoteType[][], cellColors: number[][][]}[]>([]);
 
   const handleNewGame = (level: number) => {
     const full = generateFullBoard();
     const puzzle = generatePuzzle(full, level);
     setGrid(puzzle);
     setNotes(emptyNotes);
+    setCellColors(Array.from({ length: 9 }, () => Array.from({ length: 9 }, () => [])));
     setSelectedCells([]);
     setShowWelcome(false);
     setHistory([]);
   };
 
+  // Auto-ativa/desativa modo de notação baseado na seleção
+  useEffect(() => {
+    if (selectedCells.length > 1) {
+      setNoteMode(true);
+    } else if (selectedCells.length <= 1) {
+      setNoteMode(false);
+    }
+  }, [selectedCells.length]);
+
   const handleCellClick = (row: number, col: number) => {
-    // Clique simples: adiciona célula vazia ao array sem desmarcar outras
-
-    // (Optional) You can use cellIsSelected for logic here if needed
-
-    if (!filledCells[row][col]) {
-      setSelectedCells(prev => {
-        const exists = prev.some(cell => cell.row === row && cell.col === col);
-        if (!exists) {
-          return [...prev, { row, col }];
-        }
-        return prev; // Se já está selecionada, mantém
-      });
-    } else {
-      // Se preenchida, só destaca o número
-      
+    // Click só é usado para destacar números em células preenchidas
+    if (filledCells[row][col]) {
       const value = grid[row][col];
       setHighlightNum(value);
     }
-
+    // Seleção é gerenciada pelo onMouseDown/onTouchStart
   };
 
   const handleCellMouseDown = (row: number, col: number, e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    // Não inicia seleção se célula está preenchida
-    if (filledCells[row][col]) return;
-    setIsSelecting(true);
+    handleCellPointerDown(row, col, e);
+  };
+
+  const handleCellMouseEnter = (row: number, col: number) => {
+    handleCellPointerEnter(row, col);
+  };
+
+  // Finaliza seleção por arrasto (mouse e touch)
+  React.useEffect(() => {
+    const up = () => setIsSelecting(false);
+    const touchEnd = () => setIsSelecting(false);
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchend', touchEnd);
+    return () => {
+      window.removeEventListener('mouseup', up);
+      window.removeEventListener('touchend', touchEnd);
+    };
+  }, [isSelecting]);
+
+  // Touch handlers separados para manter a lógica fora do JSX
+  const handleCellTouchStart = (e: React.TouchEvent, row: number, col: number) => {
+    e.preventDefault();
+    handleCellPointerDown(row, col, e);
+  };
+
+  const handleCellTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target && target.classList.contains('cell')) {
+      const row = Number(target.getAttribute('data-row'));
+      const col = Number(target.getAttribute('data-col'));
+      if (!isNaN(row) && !isNaN(col)) {
+        handleCellPointerEnter(row, col);
+      }
+    }
+  };
+
+  // Unifica mouse e touch para início de seleção
+  const handleCellPointerDown = (row: number, col: number, e: React.MouseEvent | React.TouchEvent) => {
+    // Para mouse: só botão esquerdo
+    if ('button' in e && e.button !== 0) return;
     
-    // Armazena se o mouse começou em uma célula selecionada para determinar comportamento do drag
+    // Se célula está preenchida, só destaca o número
+    if (filledCells[row][col]) {
+      const value = grid[row][col];
+      setHighlightNum(value);
+      return;
+    }
+    
+    // Para células vazias, gerencia seleção
+    setIsSelecting(true);
+    // Armazena se o pointer começou em célula selecionada para determinar comportamento do drag
     const cellIsSelected = selectedCells.some(cell => cell.row === row && cell.col === col);
     setDragStartedOnSelectedCell(cellIsSelected);
-    
-    // No mouse down, alterna o estado da célula
+    // Alterna o estado da célula
     setSelectedCells(prev => {
       if (cellIsSelected) {
-        // Se está selecionada, remove
         return prev.filter(cell => !(cell.row === row && cell.col === col));
       } else {
-        // Se não está selecionada, adiciona
         return [...prev, { row, col }];
       }
     });
   };
 
-  const handleCellMouseEnter = (row: number, col: number) => {
-     if (!isSelecting) return;
-     // Não seleciona se célula está preenchida
-     if (filledCells[row][col]) return;
-     
-     setSelectedCells(prev => {
-       const exists = prev.some(cell => cell.row === row && cell.col === col);
-       
-       if (dragStartedOnSelectedCell) {
-         // Se começou em célula selecionada, desmarca as células no arrasto
-         if (exists) {
-           return prev.filter(cell => !(cell.row === row && cell.col === col));
-         }
-         return prev; // Se não está selecionada, não faz nada
-       } else {
-         // Se começou em célula não selecionada, marca as células no arrasto
-         if (!exists) {
-           return [...prev, { row, col }];
-         }
-         return prev; // Se já está selecionada, não faz nada
-       }
-     });
-   };
-
-  // Finaliza seleção por arrasto
-  React.useEffect(() => {
-    const up = () => setIsSelecting(false);
-    window.addEventListener('mouseup', up);
-    return () => window.removeEventListener('mouseup', up);
-  }, [isSelecting]);
+  // Unifica mouse e touch para arrasto/drag
+  const handleCellPointerEnter = (row: number, col: number) => {
+    if (!isSelecting) return;
+    if (filledCells[row][col]) return;
+    setSelectedCells(prev => {
+      const exists = prev.some(cell => cell.row === row && cell.col === col);
+      if (dragStartedOnSelectedCell) {
+        if (exists) {
+          return prev.filter(cell => !(cell.row === row && cell.col === col));
+        }
+        return prev;
+      } else {
+        if (!exists) {
+          return [...prev, { row, col }];
+        }
+        return prev;
+      }
+    });
+  };
 
   const isValidMove = (row: number, col: number, num: string) => {
     for (let c = 0; c < 9; c++) {
@@ -227,18 +279,46 @@ const App: React.FC = () => {
 
   function handleNumberInput(num: string) {
     if (!selectedCells.length) return;
-    setHistory(h => [...h, { grid: grid.map(r => [...r]), notes: notes.map(r => r.map(n => [...n])) }]);
-    if (noteMode) {
-      setNotes(prev => {
-        const newNotes = prev.map(r => r.map(n => [...n]));
+    setHistory(h => [...h, { grid: grid.map(r => [...r]), notes: notes.map(r => r.map(n => [...n])), cellColors: cellColors.map(r => r.map(c => [...c])) }]);
+    
+    if (colorMode) {
+      // No modo cor, aplica a cor correspondente ao número
+      const colorNum = parseInt(num);
+      setCellColors(prev => {
+        const newColors = prev.map(r => r.map(c => [...c]));
         selectedCells.forEach(({row, col}) => {
-          const cellNotes = newNotes[row][col];
-          if (cellNotes.includes(num)) {
-            newNotes[row][col] = cellNotes.filter((n: string) => n !== num);
-          } else {
-            newNotes[row][col].push(num);
+          if (!grid[row][col]) { // Só aplica cor em células vazias
+            const currentColors = newColors[row][col];
+            if (!currentColors.includes(colorNum)) {
+              newColors[row][col] = [...currentColors, colorNum];
+            }
           }
         });
+        return newColors;
+      });
+    } else if (noteMode) {
+      // Lógica inteligente de anotações
+      const cellsWithoutNote = selectedCells.filter(({row, col}) => 
+        !notes[row][col]?.includes(num)
+      );
+      
+      setNotes(prev => {
+        const newNotes = prev.map(r => r.map(n => [...n]));
+        
+        if (cellsWithoutNote.length > 0) {
+          // Se alguma célula não tem a nota, adiciona nas que não têm
+          cellsWithoutNote.forEach(({row, col}) => {
+            if (!newNotes[row][col].includes(num)) {
+              newNotes[row][col].push(num);
+            }
+          });
+        } else {
+          // Se todas têm a nota, remove de todas
+          selectedCells.forEach(({row, col}) => {
+            newNotes[row][col] = newNotes[row][col].filter((n: string) => n !== num);
+          });
+        }
+        
         return newNotes;
       });
     } else {
@@ -287,7 +367,7 @@ const App: React.FC = () => {
 
   function handleClear() {
     if (!selectedCells.length) return;
-    setHistory(h => [...h, { grid: grid.map(r => [...r]), notes: notes.map(r => r.map(n => [...n])) }]);
+    setHistory(h => [...h, { grid: grid.map(r => [...r]), notes: notes.map(r => r.map(n => [...n])), cellColors: cellColors.map(r => r.map(c => [...c])) }]);
     setGrid(prev => {
       const newGrid = prev.map(r => [...r]);
       selectedCells.forEach(({row, col}) => {
@@ -296,6 +376,13 @@ const App: React.FC = () => {
       return newGrid;
     });
     setNotes(prev => prev.map(row => row.map(() => [])));
+    setCellColors(prev => {
+      const newColors = prev.map(r => r.map(c => [...c]));
+      selectedCells.forEach(({row, col}) => {
+        newColors[row][col] = []; // Limpa todas as cores
+      });
+      return newColors;
+    });
   }
 
   function handleUndo() {
@@ -303,6 +390,7 @@ const App: React.FC = () => {
     const last = history[history.length - 1];
     setGrid(last.grid);
     setNotes(last.notes);
+    setCellColors(last.cellColors);
     setHistory(h => h.slice(0, -1));
   }
 
@@ -323,6 +411,24 @@ const App: React.FC = () => {
       }
       return newNotes;
     });
+  }
+
+  function handleClearColors() {
+    if (!selectedCells.length) return;
+    setHistory(h => [...h, { grid: grid.map(r => [...r]), notes: notes.map(r => r.map(n => [...n])), cellColors: cellColors.map(r => r.map(c => [...c])) }]);
+    setCellColors(prev => {
+      const newColors = prev.map(r => r.map(c => [...c]));
+      selectedCells.forEach(({row, col}) => {
+        newColors[row][col] = []; // Limpa todas as cores
+      });
+      return newColors;
+    });
+  }
+
+  function handleBackToMenu() {
+    setShowWelcome(true);
+    setSelectedCells([]);
+    setHighlightNum(null);
   }
 
   // Atualiza filledCells sempre que grid mudar
@@ -353,7 +459,7 @@ const App: React.FC = () => {
   }, [grid]);
 
   return (
-    <div className="sudoku-app">
+    <div className="sudoku-app" style={{ touchAction: 'none', userSelect: 'none', overscrollBehavior: 'none' }}>
       {/* Exemplo de uso: filledCells[row][col] indica se está preenchida */}
       {showWelcome && (
         <div className="modal-overlay">
@@ -371,6 +477,9 @@ const App: React.FC = () => {
       )}
       {!showWelcome && (
         <div className="container">
+          <div className="header-controls">
+            <button className="back-btn" onClick={handleBackToMenu}>← Voltar</button>
+          </div>
           <div className="grid">
             {grid.map((row, rowIdx) => (
               <div className="row" key={rowIdx}>
@@ -379,13 +488,19 @@ const App: React.FC = () => {
                   const invalid = isCellInvalid(rowIdx, colIdx, cell);
                   const highlighted = isHighlightedNum(rowIdx, colIdx);
                   const highlightedNote = isHighlightedNote(rowIdx, colIdx);
+                  const cellColor = cellColors[rowIdx][colIdx];
+                  const colorClasses = cellColor.length > 0 ? cellColor.map(c => `color-${c}`).join(' ') : '';
                   return (
                     <div
-                      className={`cell${isSelected ? ' selected' : ''}${invalid ? ' invalid' : ''}${highlighted ? ' highlighted' : ''}${highlightedNote ? ' highlighted-note' : ''}`}
+                      className={`cell${isSelected ? ' selected' : ''}${invalid ? ' invalid' : ''}${highlighted ? ' highlighted' : ''}${highlightedNote ? ' highlighted-note' : ''}${colorClasses ? ` ${colorClasses}` : ''}`}
                       key={colIdx}
                       onClick={() => handleCellClick(rowIdx, colIdx)}
                       onMouseDown={e => handleCellMouseDown(rowIdx, colIdx, e)}
                       onMouseEnter={() => handleCellMouseEnter(rowIdx, colIdx)}
+                      onTouchStart={e => handleCellTouchStart(e, rowIdx, colIdx)}
+                      onTouchMove={e => handleCellTouchMove(e)}
+                      data-row={rowIdx}
+                      data-col={colIdx}
                     >
                       {cell ? (
                         <span className="cell-text">{cell}</span>
@@ -414,9 +529,29 @@ const App: React.FC = () => {
               <button className="key-action" onClick={handleClear}>🗑️</button>
               <button className="key-action" onClick={handleUndo}>↩️</button>
               <button className={`key-action${noteMode ? ' note-mode' : ''}`} onClick={() => setNoteMode(m => !m)}>✏️</button>
+              <button className={`key-action${colorMode ? ' color-mode' : ''}`} onClick={() => setColorMode(m => !m)}>🎨</button>
+              <button className="key-action" onClick={handleClearColors}>🧹</button>
               <button className="key-action" onClick={fillAllPossibilities}>?</button>
             </div>
           </div>
+          {colorMode && (
+            <div className="color-picker">
+              <div className="color-options">
+                {[1,2,3,4,5,6,7,8,9].map(colorNum => (
+                  <button 
+                    key={colorNum} 
+                    className={`color-btn color-${colorNum}${selectedColor === colorNum ? ' selected' : ''}`}
+                    onClick={() => {
+                      setSelectedColor(colorNum);
+                      handleNumberInput(colorNum.toString());
+                    }}
+                  >
+                    {colorNum}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
