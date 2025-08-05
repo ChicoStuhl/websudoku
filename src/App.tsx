@@ -497,7 +497,7 @@ const App: React.FC = () => {
       {!showWelcome && (
         <div className="container">
           <div className="header-controls">
-            <button className="back-btn" onClick={handleBackToMenu} onTouchStart={handleBackToMenu}>← Voltar</button>
+            <button className="back-btn" onClick={handleBackToMenu} onTouchStart={handleBackToMenu}>←</button>
           </div>
           <div className="grid">
             {grid.map((row, rowIdx) => (
