@@ -186,7 +186,7 @@ const App: React.FC = () => {
   };
 
   const handleCellTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
+    // Removido e.preventDefault() que causava erro em passive listener
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
     if (target && target.classList.contains('cell')) {
@@ -483,9 +483,9 @@ const App: React.FC = () => {
       {showWelcome && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Bem-vindo ao Sudoku!</h2>
-            <p>Selecione a dificuldade:</p>
-            <select value={pickerValue} onChange={e => setPickerValue(Number(e.target.value))} >
+            <h2 className="welcome-text" >Bem-vindo ao Sudoku!</h2>
+            <p className="difficult-text">Selecione a dificuldade:</p>
+            <select className="select-box" value={pickerValue} onChange={e => setPickerValue(Number(e.target.value))} >
               {[1,2,3,4,5,6,7,8,9,10].map(n => (
                 <option key={n} value={n}>{n} - {LEVELS[n-1]}</option>
               ))}
@@ -552,8 +552,7 @@ const App: React.FC = () => {
               <button className="key-action" onClick={handleClearColors} onTouchStart={handleClearColors}>🧹</button>
               <button className="key-action" onClick={fillAllPossibilities} onTouchStart={fillAllPossibilities}>?</button>
             </div>
-          </div>
-          {colorMode && (
+            {colorMode && (
             <div className="color-picker">
               <div className="color-options">
                 {[1,2,3,4,5,6,7,8,9].map(colorNum => (
@@ -574,7 +573,8 @@ const App: React.FC = () => {
                 ))}
               </div>
             </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
