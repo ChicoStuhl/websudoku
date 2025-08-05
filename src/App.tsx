@@ -77,8 +77,9 @@ const App: React.FC = () => {
     
     // Previne comportamentos padrão de touch
     function preventDefaultTouch(e: TouchEvent) {
-      if (e.target && (e.target as HTMLElement).closest('.sudoku-app')) {
-        e.preventDefault();
+      if (e.target && (e.target as HTMLElement).closest('.sudoku-app') &&
+          !(e.target as HTMLElement).closest('select, option')) {
+          e.preventDefault();
       }
     }
     
@@ -459,26 +460,26 @@ const App: React.FC = () => {
   }, [grid]);
 
   return (
-    <div className="sudoku-app" style={{ touchAction: 'none', userSelect: 'none', overscrollBehavior: 'none' }}>
+    <div className="sudoku-app" style={{ userSelect: 'none', overscrollBehavior: 'none' }}>
       {/* Exemplo de uso: filledCells[row][col] indica se está preenchida */}
       {showWelcome && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>Bem-vindo ao Sudoku!</h2>
             <p>Selecione a dificuldade:</p>
-            <select value={pickerValue} onChange={e => setPickerValue(Number(e.target.value))}>
+            <select value={pickerValue} onChange={e => setPickerValue(Number(e.target.value))} >
               {[1,2,3,4,5,6,7,8,9,10].map(n => (
                 <option key={n} value={n}>{n} - {LEVELS[n-1]}</option>
               ))}
             </select>
-            <button className="start-btn" onClick={() => handleNewGame(pickerValue)}>Começar</button>
+            <button className="start-btn" onClick={() => handleNewGame(pickerValue)} onTouchStart={() => handleNewGame(pickerValue)}>Começar</button>
           </div>
         </div>
       )}
       {!showWelcome && (
         <div className="container">
           <div className="header-controls">
-            <button className="back-btn" onClick={handleBackToMenu}>← Voltar</button>
+            <button className="back-btn" onClick={handleBackToMenu} onTouchStart={handleBackToMenu}>← Voltar</button>
           </div>
           <div className="grid">
             {grid.map((row, rowIdx) => (
@@ -522,16 +523,16 @@ const App: React.FC = () => {
           <div className="keyboard-row">
             <div className="keyboard-nums">
               {[...'123456789'].map(num => (
-                <button key={num} className="key-num" onClick={() => handleNumberInput(num)}>{num}</button>
+                <button key={num} className="key-num" onClick={() => handleNumberInput(num)} onTouchStart={() => handleNumberInput(num)}>{num}</button>
               ))}
             </div>
             <div className="keyboard-actions">
-              <button className="key-action" onClick={handleClear}>🗑️</button>
-              <button className="key-action" onClick={handleUndo}>↩️</button>
-              <button className={`key-action${noteMode ? ' note-mode' : ''}`} onClick={() => setNoteMode(m => !m)}>✏️</button>
-              <button className={`key-action${colorMode ? ' color-mode' : ''}`} onClick={() => setColorMode(m => !m)}>🎨</button>
-              <button className="key-action" onClick={handleClearColors}>🧹</button>
-              <button className="key-action" onClick={fillAllPossibilities}>?</button>
+              <button className="key-action" onClick={handleClear} onTouchStart={handleClear}>🗑️</button>
+              <button className="key-action" onClick={handleUndo} onTouchStart={handleUndo}>↩️</button>
+              <button className={`key-action${noteMode ? ' note-mode' : ''}`} onClick={() => setNoteMode(m => !m)} onTouchStart={() => setNoteMode(m => !m)}>✏️</button>
+              <button className={`key-action${colorMode ? ' color-mode' : ''}`} onClick={() => setColorMode(m => !m)} onTouchStart={() => setColorMode(m => !m)}>🎨</button>
+              <button className="key-action" onClick={handleClearColors} onTouchStart={handleClearColors}>🧹</button>
+              <button className="key-action" onClick={fillAllPossibilities} onTouchStart={fillAllPossibilities}>?</button>
             </div>
           </div>
           {colorMode && (
@@ -544,7 +545,11 @@ const App: React.FC = () => {
                     onClick={() => {
                       setSelectedColor(colorNum);
                       handleNumberInput(colorNum.toString());
-                    }}
+                    }} 
+                    onTouchStart={() => {
+                      setSelectedColor(colorNum);
+                      handleNumberInput(colorNum.toString());
+                    }} 
                   >
                     {colorNum}
                   </button>
