@@ -84,8 +84,8 @@
   border-color: #d32f2f;
 }
 .cell.highlighted {
-  background: #1976d2;
-  color: #fff;
+  background: #1976d2 !important;
+  color: #fff !important;
 }
 .cell.influence {
   background: #e3e3e3;
@@ -133,11 +133,23 @@
   box-shadow: inset 0 0 0 2px #1976d2 !important; /* Reforça a seleção visualmente */
 }
 
+.cell.fixed {
+  background: #dfdfdf;
+  color: #000000;
+  font-weight: bold;
+}
+
 .cell-text {
   font-weight: bold;
   font-size: 22px;
-  color: #222;
+  color: #000000;
 }
+
+/* add cell-text and fixed */
+.cell.fixed .cell-text {
+  color: #000000;
+}
+
 .notes-container {
   display: flex;
   flex-wrap: wrap;
@@ -319,4 +331,6 @@
 .cell:first-child {
   border-left: 3px solid #333;
 }
+
+
 

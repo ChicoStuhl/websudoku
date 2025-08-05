@@ -9,6 +9,8 @@ const LEVELS = [
   'DESAFIO', 'EXPERTO', 'MESTRE', 'INSANO', 'INJUSTO'
 ];
 
+
+
 function shuffle(array: string[]): string[] {
   let arr = array.slice();
   for (let i = arr.length - 1; i > 0; i--) {
@@ -117,6 +119,11 @@ const App: React.FC = () => {
   const [showWelcome, setShowWelcome] = useState(true);
   const [pickerValue, setPickerValue] = useState(1);
   const [history, setHistory] = useState<{grid: string[][], notes: NoteType[][], cellColors: number[][][]}[]>([]);
+  const [fixedCells, setFixedCells] = useState<boolean[][]>(
+    Array.from({ length: 9 }, () => Array(9).fill(false))
+  );
+
+
 
   const handleNewGame = (level: number) => {
     const full = generateFullBoard();
@@ -127,6 +134,11 @@ const App: React.FC = () => {
     setSelectedCells([]);
     setShowWelcome(false);
     setHistory([]);
+
+    setFixedCells(
+      puzzle.map(row => row.map(cell => cell !== ''))
+    );
+
   };
 
   // Auto-ativa/desativa modo de notação baseado na seleção
@@ -192,7 +204,7 @@ const App: React.FC = () => {
     if ('button' in e && e.button !== 0) return;
     
     // Se célula está preenchida, só destaca o número
-    if (filledCells[row][col]) {
+    if (fixedCells[row][col]) {
       const value = grid[row][col];
       setHighlightNum(value);
       return;
@@ -216,7 +228,7 @@ const App: React.FC = () => {
   // Unifica mouse e touch para arrasto/drag
   const handleCellPointerEnter = (row: number, col: number) => {
     if (!isSelecting) return;
-    if (filledCells[row][col]) return;
+    if (fixedCells[row][col]) return;
     setSelectedCells(prev => {
       const exists = prev.some(cell => cell.row === row && cell.col === col);
       if (dragStartedOnSelectedCell) {
@@ -324,12 +336,18 @@ const App: React.FC = () => {
       });
     } else {
       // Só insere se todas as selecionadas estiverem vazias e o número for válido em todas
-      if (selectedCells.some(({row, col}) => grid[row][col])) return;
-      if (selectedCells.some(({row, col}) => !isValidMove(row, col, num))) return;
+      if (selectedCells.some(({row, col}) => fixedCells[row][col])) return;
+      // if (selectedCells.some(({row, col}) => !isValidMove(row, col, num))) return;
       setGrid(prev => {
         const newGrid = prev.map(r => [...r]);
         selectedCells.forEach(({row, col}) => {
-          newGrid[row][col] = num;
+          if (!fixedCells[row][col]) {
+            newGrid[row][col] = num;
+            setSelectedCells(prev => {
+              return [...prev, { row, col }];
+            });
+            setHighlightNum(num);
+          }
         });
         return newGrid;
       });
@@ -493,7 +511,7 @@ const App: React.FC = () => {
                   const colorClasses = cellColor.length > 0 ? cellColor.map(c => `color-${c}`).join(' ') : '';
                   return (
                     <div
-                      className={`cell${isSelected ? ' selected' : ''}${invalid ? ' invalid' : ''}${highlighted ? ' highlighted' : ''}${highlightedNote ? ' highlighted-note' : ''}${colorClasses ? ` ${colorClasses}` : ''}`}
+                      className={`cell${isSelected ? ' selected' : ''}${invalid ? ' invalid' : ''}${highlighted ? ' highlighted' : ''}${highlightedNote ? ' highlighted-note' : ''}${colorClasses ? ` ${colorClasses}` : ''}${fixedCells[rowIdx][colIdx] ? ' fixed' : ''}`}
                       key={colIdx}
                       onClick={() => handleCellClick(rowIdx, colIdx)}
                       onMouseDown={e => handleCellMouseDown(rowIdx, colIdx, e)}
