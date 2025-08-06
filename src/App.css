@@ -1,4 +1,18 @@
 /* Sudoku WebApp Styles */
+.body {
+  /* quero dar nomes para as cores de forma global */
+
+  --color1: #d30120 ;
+  --color2: #3e057c ;
+  --color3: #00ae00 ;
+  --color4: #003e6b ;
+  --color5: #9c6000 ;
+  --color6: #ed6d98 ;
+  --color7: #2fc4ea ;
+  --color8: #aaaa00 ;
+  --color9: #470e0e ;
+
+}
 
 .modal-content select,
 .modal-content option {
@@ -66,7 +80,7 @@
 .grid {
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: #ffffff;
   border: 2px solid #333;
   margin-bottom: 2%;
   box-shadow: 0 2px 8px #0001;
@@ -103,36 +117,15 @@
 }
 
 /* Cores para células */
-.cell.color-1 { background-color: #ffebee !important; }
-.cell.color-2 { background-color: #f3e5f5 !important; }
-.cell.color-3 { background-color: #e8f5e8 !important; }
-.cell.color-4 { background-color: #e3f2fd !important; }
-.cell.color-5 { background-color: #fff3e0 !important; }
-.cell.color-6 { background-color: #fce4ec !important; }
-.cell.color-7 { background-color: #f1f8e9 !important; }
-.cell.color-8 { background-color: #e0f2f1 !important; }
-.cell.color-9 { background-color: #fff8e1 !important; }
-
-/* Múltiplas cores - gradientes */
-.cell.color-1.color-2 { background: linear-gradient(45deg, #ffebee 50%, #f3e5f5 50%) !important; }
-.cell.color-1.color-3 { background: linear-gradient(45deg, #ffebee 50%, #e8f5e8 50%) !important; }
-.cell.color-1.color-4 { background: linear-gradient(45deg, #ffebee 50%, #e3f2fd 50%) !important; }
-.cell.color-2.color-3 { background: linear-gradient(45deg, #f3e5f5 50%, #e8f5e8 50%) !important; }
-.cell.color-2.color-4 { background: linear-gradient(45deg, #f3e5f5 50%, #e3f2fd 50%) !important; }
-.cell.color-3.color-4 { background: linear-gradient(45deg, #e8f5e8 50%, #e3f2fd 50%) !important; }
-
-/* Para 3 cores - dividir em três seções */
-.cell.color-1.color-2.color-3 { 
-  background: linear-gradient(120deg, #ffebee 33%, #f3e5f5 33%, #f3e5f5 66%, #e8f5e8 66%) !important; 
-}
-.cell.color-1.color-2.color-4 { 
-  background: linear-gradient(120deg, #ffebee 33%, #f3e5f5 33%, #f3e5f5 66%, #e3f2fd 66%) !important; 
-}
-
-/* Para 4+ cores - padrão xadrez/listras */
-.cell.color-1.color-2.color-3.color-4 { 
-  background: repeating-linear-gradient(45deg, #ffebee 0px, #ffebee 9px, #f3e5f5 9px, #f3e5f5 18px, #e8f5e8 18px, #e8f5e8 27px, #e3f2fd 27px, #e3f2fd 36px) !important; 
-}
+.cell.color-1 { background-color:  #d30120 !important; }
+.cell.color-2 { background-color:  #3e057c !important; }
+.cell.color-3 { background-color:  #00ae00 !important; }
+.cell.color-4 { background-color:  #003e6b !important; }
+.cell.color-5 { background-color:  #9c6000 !important; }
+.cell.color-6 { background-color:  #ed6d98 !important; }
+.cell.color-7 { background-color:  #2fc4ea !important; }
+.cell.color-8 { background-color:  #aaaa00 !important; }
+.cell.color-9 { background-color:  #470e0e !important; }
 
 /* SELEÇÃO TEM PRIORIDADE MÁXIMA - sobrescreve todas as cores */
 .cell.selected {
@@ -142,7 +135,7 @@
 }
 
 .cell.fixed {
-  background: #dfdfdf;
+  background: #c2c2c2;
   color: #000000;
   font-weight: bold;
 }
@@ -150,7 +143,7 @@
 .cell-text {
   font-weight: bold;
   font-size: 22px;
-  color: #000000;
+  color: #000764;
 }
 
 /* add cell-text and fixed */
@@ -206,6 +199,9 @@
   font-weight: bold;
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .key-num:hover {
   background: #125ea2;
@@ -267,23 +263,26 @@
   cursor: pointer;
   font-weight: bold;
   font-size: 16px;
-  color: #333;
+  color: #fbfbfb;
   transition: all 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 .color-btn.selected {
   border-width: 3px;
   border-color: #1976d2;
   transform: scale(1.1);
 }
-.color-btn.color-1 { background-color: #ffebee; }
-.color-btn.color-2 { background-color: #f3e5f5; }
-.color-btn.color-3 { background-color: #e8f5e8; }
-.color-btn.color-4 { background-color: #e3f2fd; }
-.color-btn.color-5 { background-color: #fff3e0; }
-.color-btn.color-6 { background-color: #fce4ec; }
-.color-btn.color-7 { background-color: #f1f8e9; }
-.color-btn.color-8 { background-color: #e0f2f1; }
-.color-btn.color-9 { background-color: #fff8e1; }
+.color-btn.color-1 { background-color: #d30120 !important; }
+.color-btn.color-2 { background-color: #3e057c !important; }
+.color-btn.color-3 { background-color: #00ae00 !important; }
+.color-btn.color-4 { background-color: #003e6b !important; }
+.color-btn.color-5 { background-color: #9c6000 !important; }
+.color-btn.color-6 { background-color: #ed6d98 !important; }
+.color-btn.color-7 { background-color: #2fc4ea !important; }
+.color-btn.color-8 { background-color: #aaaa00 !important; }
+.color-btn.color-9 { background-color: #470e0e !important; }
 
 .modal-overlay {
   margin-top: 10%;

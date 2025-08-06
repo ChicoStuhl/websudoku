@@ -209,6 +209,11 @@ const App: React.FC = () => {
       setHighlightNum(value);
       return;
     }
+
+    if (filledCells[row][col]) {
+      const value = grid[row][col];
+      setHighlightNum(value);
+    }
     
     // Para células vazias, gerencia seleção
     setIsSelecting(true);
@@ -343,9 +348,6 @@ const App: React.FC = () => {
         selectedCells.forEach(({row, col}) => {
           if (!fixedCells[row][col]) {
             newGrid[row][col] = num;
-            setSelectedCells(prev => {
-              return [...prev, { row, col }];
-            });
             setHighlightNum(num);
           }
         });
@@ -385,23 +387,40 @@ const App: React.FC = () => {
   }
 
   function handleClear() {
+    //quero que limpe somente as células selecionadas mesmo se ela for filledCells
     if (!selectedCells.length) return;
     setHistory(h => [...h, { grid: grid.map(r => [...r]), notes: notes.map(r => r.map(n => [...n])), cellColors: cellColors.map(r => r.map(c => [...c])) }]);
+
     setGrid(prev => {
       const newGrid = prev.map(r => [...r]);
       selectedCells.forEach(({row, col}) => {
-        newGrid[row][col] = '';
+        if (!fixedCells[row][col]) { // Só limpa se não for uma célula fixa
+          newGrid[row][col] = '';
+        }
       });
       return newGrid;
     });
-    setNotes(prev => prev.map(row => row.map(() => [])));
     setCellColors(prev => {
       const newColors = prev.map(r => r.map(c => [...c]));
       selectedCells.forEach(({row, col}) => {
-        newColors[row][col] = []; // Limpa todas as cores
+        if (!fixedCells[row][col]) { // Só limpa se não for uma célula fixa
+          newColors[row][col] = []; // Limpa todas as cores
+        }
       });
       return newColors;
     });
+    setSelectedCells([]);
+    setHighlightNum(null);
+    setDragStartedOnSelectedCell(false);
+    // Atualiza filledCells
+    setFilledCells(
+      grid.map((row, rIdx) => row.map((cell, cIdx) => {
+        if (fixedCells[rIdx][cIdx]) return true; // Células fixas permanecem preenchidas
+        console.log('cell:', cell);
+        console.log('rIdx:', rIdx, 'cIdx:', cIdx);
+        return cell !== ''; // Verifica se a célula está vazia
+      }))
+    );
   }
 
   function handleUndo() {
